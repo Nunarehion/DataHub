@@ -5,6 +5,18 @@ import structlog
 import asyncio
 
 class FieldLog:
+    """
+    Класс для сбора и управления значениями полей.
+
+    Attributes:
+        fields (list): Список имен полей.
+        values (dict): Словарь значений полей.
+
+    Methods:
+        set_value(field, value): Устанавливает значение для поля.
+        is_complete(): Проверяет, заполнены ли все поля.
+        to_dict(): Возвращает значения полей в виде словаря.
+    """
     PROG = "PROG"
     DONE = "DONE"
 
