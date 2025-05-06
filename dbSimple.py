@@ -1,11 +1,4 @@
-class Field:
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-
-    def __repr__(self):
-        return f"{self.value}"
-
+from copy import deepcopy
 
 class dbController:
     def __init__(self):
@@ -13,20 +6,20 @@ class dbController:
         self.transactions = []
 
     def BEGIN(self):
-        self.transactions.append({})
+        new_transaction = deepcopy(self.db)
+        if self.transactions:
+            new_transaction = deepcopy(self.transactions[-1])
+        self.transactions.append(new_transaction)
 
     def SET(self, key, value):
         if self.transactions:
-            self.transactions[-1][key] = Field(key, value)
-            return
-        self.db[key] = Field(key, value)
-        # return self.db[key]
+            self.transactions[-1][key] = value
+        else:
+            self.db[key] = value
 
     def GET(self, key):
         if self.transactions:
-            for transaction in self.transactions:
-                if value := transaction.get(key):
-                    return value
+            return self.transactions[-1].get(key, "NULL")
         return self.db.get(key, "NULL")
 
     def ROLLBACK(self):
@@ -35,25 +28,28 @@ class dbController:
 
     def COMMIT(self):
         if self.transactions:
-            if len(self.transactions >= 2):
-                self.transactions[-2].update(self.transactions.pop())
+            last_transaction = self.transactions.pop()
+            if self.transactions:
+                self.transactions[-1] = last_transaction
             else:
-                self.db.update(self.transactions.pop())
+                self.db = last_transaction
 
     def UNSET(self, key):
-            if self.transactions:
-            for transaction in self.transactions:
-                if value := transaction.get(key):
-                    return value
-        return self.db.get(key, "NULL")
-        self.db.pop(key, None)
-
-    def FINDE(self, value):
-        return [key for key in self.db if self.db[key].value == value]
-
+        if self.transactions:
+            self.transactions[-1].pop(key, None)
+        else:
+            self.db.pop(key, None)
+            
+    def FIND(self, value):
+        if self.transactions:
+            return [key for key in self.transactions[-1] if self.transactions[-1][key] == value]
+        return [key for key in self.db if self.db[key] == value]
+    
     def COUNTS(self, value):
-        return sum(1 for key in self.db if self.db[key].value == value)
-
+        if self.transactions:
+            return sum(1 for key in self.transactions[-1] if self.transactions[-1][key] == value)
+        return sum(1 for key in self.db if self.db[key] == value)
+    
     def END(self):
         exit()
 
@@ -63,13 +59,11 @@ class dbController:
             output = self.__getattribute__(func)(*args)
             if output:
                 print(output)
-
         except Exception as e:
             print(e)
 
     def run(self):
         while True:
             self.parseData(input("> "))
-
 
 dbController().run()
